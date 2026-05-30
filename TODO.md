@@ -14,7 +14,7 @@
 |---|------|:---:|------|
 | M0 | 環境構築・設計 | `[x]` | リポジトリ初期化・設計書・CLAUDE.md |
 | M1 | 収集パイプライン（最優先） | `[~]` | RSS/SEC収集 → Notion保存 → Cron。**手動コピペ解消**（コア実装完了・実Notion検証待ち） |
-| M2 | PWAフロント | `[ ]` | 銘柄別一覧UI + ホーム画面追加 |
+| M2 | PWAフロント | `[~]` | 銘柄別一覧UI + ホーム画面追加（実装完了・iPhone実機確認待ち） |
 | M3 | AI要約 | `[ ]` | 非Gemini無料LLMで日本語要約 |
 | M4 | プッシュ通知 | `[ ]` | iOS Web Push（iOS16+） |
 
@@ -66,14 +66,15 @@
 
 ---
 
-## M2. PWAフロント `feat/pwa-frontend`　`[ ]`
-- [ ] `app/api/news/route.ts` — `StorageProvider.list()` 読み出し（キャッシュ）
-- [ ] `app/page.tsx` — 銘柄別ニュース一覧UI（タブ/フィルタ）
-- [ ] ニュースカード コンポーネント（タイトル・日付・ソース・概要・リンク）
-- [ ] `app/manifest.ts` — PWA manifest（名前・アイコン・theme_color）
-- [ ] `public/icons/` — アプリアイコン一式
-- [ ] `public/sw.js` — Service Worker（オフラインキャッシュ）
-- [ ] iPhone でホーム画面追加・表示確認
+## M2. PWAフロント `feat/pwa-frontend`　`[~]`
+- [x] `app/api/news/route.ts` — `StorageProvider.list()` 読み出し（キャッシュ300s・未接続を穏当処理）
+- [x] `app/page.tsx` — 銘柄別ニュース一覧UI（タブ/フィルタ）
+- [x] ニュースカード コンポーネント（タイトル・日付・ソース・概要・リンク）
+- [x] `app/manifest.ts` — PWA manifest（名前・アイコン・theme_color）
+- [x] `public/icons/` — アプリアイコン一式（192/512/apple-touch）
+- [x] `public/sw.js` — Service Worker（オフラインキャッシュ）
+- [x] typecheck/build 緑・dev実機で描画/アセット/API確認
+- [ ] iPhone でホーム画面追加・表示確認（実Notionデータ投入後）
 - [ ] PR作成・マージ
 
 ---
