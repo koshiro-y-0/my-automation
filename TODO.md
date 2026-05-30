@@ -15,7 +15,7 @@
 | M0 | 環境構築・設計 | `[x]` | リポジトリ初期化・設計書・CLAUDE.md |
 | M1 | 収集パイプライン（最優先） | `[~]` | RSS/SEC収集 → Notion保存 → Cron。**手動コピペ解消**（コア実装完了・実Notion検証待ち） |
 | M2 | PWAフロント | `[~]` | 銘柄別一覧UI + ホーム画面追加（実装完了・iPhone実機確認待ち） |
-| M3 | AI要約 | `[ ]` | 非Gemini無料LLMで日本語要約 |
+| M3 | AI要約 | `[~]` | 非Gemini無料LLM(Groq)で日本語要約（実装完了・実キー検証待ち） |
 | M4 | プッシュ通知 | `[ ]` | iOS Web Push（iOS16+） |
 
 ---
@@ -79,11 +79,12 @@
 
 ---
 
-## M3. AI要約 `feat/ai-summary`　`[ ]`
-- [ ] LLMプロバイダ選定（Groq 等・非Gemini無料枠）
-- [ ] `lib/summarizer/llm.ts` — `LlmSummarizer`（日本語要約）
-- [ ] `SUMMARIZER=llm` で切替動作確認
-- [ ] レート/無料枠の監視・フォールバック（失敗時はPassthrough）
+## M3. AI要約 `feat/ai-summary`　`[~]`
+- [x] LLMプロバイダ選定 → **Groq**（非Gemini・無料枠・OpenAI互換）
+- [x] `lib/summarizer/llm.ts` — `LlmSummarizer`（日本語要約、fetchのみ）
+- [x] `SUMMARIZER=llm` で切替（factory配線）
+- [x] フォールバック（キー未設定/API失敗→Passthrough）を実機検証
+- [ ] 実 GROQ_API_KEY での要約品質確認
 - [ ] PR作成・マージ
 
 ---
