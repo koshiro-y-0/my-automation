@@ -16,7 +16,7 @@
 | M1 | 収集パイプライン（最優先） | `[~]` | RSS/SEC収集 → Notion保存 → Cron。**手動コピペ解消**（コア実装完了・実Notion検証待ち） |
 | M2 | PWAフロント | `[~]` | 銘柄別一覧UI + ホーム画面追加（実装完了・iPhone実機確認待ち） |
 | M3 | AI要約 | `[~]` | 非Gemini無料LLM(Groq)で日本語要約（実装完了・実キー検証待ち） |
-| M4 | プッシュ通知 | `[ ]` | iOS Web Push（iOS16+） |
+| M4 | プッシュ通知 | `[~]` | iOS Web Push（iOS16+）（実装完了・iPhone実機検証待ち） |
 
 ---
 
@@ -89,13 +89,15 @@
 
 ---
 
-## M4. プッシュ通知 `feat/push-notification`　`[ ]`
-- [ ] VAPID鍵生成・環境変数設定
-- [ ] `app/api/push/subscribe/route.ts` — 購読登録
-- [ ] 購読情報の保存（StorageProvider拡張）
-- [ ] Service Worker に push イベントハンドラ追加
-- [ ] 収集時に新着があれば通知送信（`web-push`）
-- [ ] iOS16+ 実機で通知受信確認
+## M4. プッシュ通知 `feat/push-notification`　`[~]`
+- [x] VAPID鍵生成（`npm run gen:vapid`）・環境変数整理
+- [x] `app/api/push/subscribe/route.ts` — 購読登録（GET公開鍵 / POST保存）
+- [x] 購読情報の保存（`SubscriptionStore` 抽象 + Notion別DB実装）
+- [x] Service Worker に push / notificationclick ハンドラ追加
+- [x] `EnablePushButton` — 許可要求→購読（iOS制約を案内）
+- [x] 収集時に新着があれば通知送信（pipeline + `web-push`）
+- [x] 未設定時の穏当な無効化を実機検証（GET configured:false / POST 503 / broadcast no-op）
+- [ ] iOS16+ 実機で通知受信確認（VAPID/購読DB設定 + デプロイ後）
 - [ ] PR作成・マージ
 
 ---
