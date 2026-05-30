@@ -1,5 +1,13 @@
 import type { RawArticle, Ticker, TickerConfig } from "@/lib/types";
-import { type Source, USER_AGENT } from "./source";
+import type { Source } from "./source";
+
+/**
+ * SEC は User-Agent に「連絡先（メール）」を含めることを必須とする。
+ * 形式が満たないと 403 で拒否される。環境変数で上書き可能。
+ * 参考: https://www.sec.gov/os/webmaster-faq#developers
+ */
+const SEC_USER_AGENT =
+  process.env.SEC_USER_AGENT ?? "my-automation/0.1 (contact: koshiro49@icloud.com)";
 
 /**
  * SEC EDGAR の CIK（ゼロ埋め10桁）。
@@ -50,7 +58,7 @@ export class SecEdgarSource implements Source {
 
     const res = await fetch(
       `https://data.sec.gov/submissions/CIK${cik}.json`,
-      { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(15_000) },
+      { headers: { "User-Agent": SEC_USER_AGENT }, signal: AbortSignal.timeout(15_000) },
     );
     if (!res.ok) {
       throw new Error(`SEC EDGAR ${cik} responded ${res.status}`);
