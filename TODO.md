@@ -1,6 +1,7 @@
 # TODO / WBS — 米国株情報収集・自動化ワークフロー
 
 本書は開発の作業分解（WBS）兼進捗管理表。設計は [`docs/design.md`](docs/design.md)、開発指針は [`CLAUDE.md`](CLAUDE.md) を正とする。
+**機能実装（M1〜M4）は全て完了。残りの手動セットアップは [`docs/SETUP.md`](docs/SETUP.md) を参照。**
 
 凡例: `[ ]` 未着手 / `[~]` 進行中 / `[x]` 完了
 
@@ -13,10 +14,11 @@
 | M | 名称 | 状態 | 内容 |
 |---|------|:---:|------|
 | M0 | 環境構築・設計 | `[x]` | リポジトリ初期化・設計書・CLAUDE.md |
-| M1 | 収集パイプライン（最優先） | `[~]` | RSS/SEC収集 → Notion保存 → Cron。**手動コピペ解消**（コア実装完了・実Notion検証待ち） |
-| M2 | PWAフロント | `[~]` | 銘柄別一覧UI + ホーム画面追加（実装完了・iPhone実機確認待ち） |
-| M3 | AI要約 | `[~]` | 非Gemini無料LLM(Groq)で日本語要約（実装完了・実キー検証待ち） |
-| M4 | プッシュ通知 | `[~]` | iOS Web Push（iOS16+）（実装完了・iPhone実機検証待ち） |
+| M1 | 収集パイプライン（最優先） | `[x]` | RSS/SEC収集 → Notion保存 → Cron。**手動コピペ解消**（実装完了・PR#2 merged） |
+| M2 | PWAフロント | `[x]` | 銘柄別一覧UI + ホーム画面追加（実装完了・PR#3 merged） |
+| M3 | AI要約 | `[x]` | 非Gemini無料LLM(Groq)で日本語要約（実装完了・PR#4 merged） |
+| M4 | プッシュ通知 | `[x]` | iOS Web Push（iOS16+）（実装完了・PR#5 merged） |
+| M5 | 本番化（手動） | `[ ]` | Notion接続・Vercelデプロイ・実機検証。手順は `docs/SETUP.md` |
 
 ---
 
@@ -97,13 +99,17 @@
 - [x] `EnablePushButton` — 許可要求→購読（iOS制約を案内）
 - [x] 収集時に新着があれば通知送信（pipeline + `web-push`）
 - [x] 未設定時の穏当な無効化を実機検証（GET configured:false / POST 503 / broadcast no-op）
-- [ ] iOS16+ 実機で通知受信確認（VAPID/購読DB設定 + デプロイ後）
-- [ ] PR作成・マージ
+- [x] PR作成・マージ（PR#5）
+- [ ] iOS16+ 実機で通知受信確認（→ M5 ステップ4）
 
 ---
 
-## 横断 / 運用
-- [ ] Vercel へデプロイ（無料プラン）・環境変数設定
-- [ ] Notion Integration 作成・DBプロパティ整備
-- [ ] Cron 実行ログ・無料枠使用量の定期確認
-- [ ] README 運用手順の更新
+## M5. 本番化（手動セットアップ）　`[ ]`　← 明日ここから
+> 詳細手順・トラブル早見表は [`docs/SETUP.md`](docs/SETUP.md)。
+
+- [ ] **S0** ローカル準備（`npm install` / `.env.local` 作成 / `npm run dev`）🔑
+- [ ] **S1** Notion 準備（Integration作成・ニュースDB作成・接続・手動収集で疎通）🔑
+- [ ] **S2** Vercel デプロイ（リポジトリインポート・環境変数・Cron確認）🔑
+- [ ] **S3** AI要約を有効化（Groqキー・`SUMMARIZER=llm`）⭐任意
+- [ ] **S4** プッシュ通知を有効化（VAPID鍵・購読DB・iPhoneで許可）⭐任意
+- [ ] **S5** 数日運用・無料枠監視・改善Issue化
