@@ -1,5 +1,4 @@
-// Service Worker — オフライン対応の最小実装（設計書 M2）
-// プッシュ通知は後続フェーズ（M4）で push/notificationclick を追加する。
+// Service Worker — オフライン対応 + Web Push（設計書 M2 / M4）
 
 const CACHE = "usw-v1";
 const APP_SHELL = ["/"];
@@ -43,5 +42,37 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.match(request).then((cached) => cached || fetch(request)),
+  );
+});
+
+// ── Web Push（M4） ──────────────────────────────────────────
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: "US Stock Watch", body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "US Stock Watch";
+  const options = {
+    body: data.body || "",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    data: { url: data.url || "/" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes(url) && "focus" in client) return client.focus();
+      }
+      return self.clients.openWindow(url);
+    }),
   );
 });

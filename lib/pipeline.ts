@@ -1,5 +1,6 @@
 import { TICKERS } from "@/lib/config/tickers";
 import { urlToId } from "@/lib/hash";
+import { broadcast, isPushEnabled } from "@/lib/push/notifier";
 import { getSources } from "@/lib/sources";
 import { getStorage } from "@/lib/storage";
 import { getSummarizer } from "@/lib/summarizer";
@@ -10,6 +11,7 @@ export interface CollectResult {
   unique: number;
   saved: number;
   skipped: number;
+  notified: number;
   errors: string[];
 }
 
@@ -72,14 +74,46 @@ export async function collect(): Promise<CollectResult> {
     });
   }
 
-  // 4. 保存（既存はskip）
+  // 4. 新着を特定 → 保存
+  const existing = await storage.existingIds(items.map((i) => i.id));
+  const fresh = items.filter((i) => !existing.has(i.id));
   const { saved, skipped } = await storage.saveMany(items);
+
+  // 5. 新着があればプッシュ通知（鍵/購読未設定なら no-op）
+  let notified = 0;
+  if (fresh.length > 0 && isPushEnabled()) {
+    try {
+      const r = await broadcast(buildPayload(fresh));
+      notified = r.sent;
+    } catch {
+      // 通知失敗は収集結果に影響させない
+    }
+  }
 
   return {
     fetched: raw.length,
     unique: items.length,
     saved,
     skipped,
+    notified,
     errors,
+  };
+}
+
+/** 新着ニュースから通知ペイロードを組み立てる。 */
+function buildPayload(fresh: NewsItem[]) {
+  if (fresh.length === 1) {
+    const item = fresh[0];
+    return {
+      title: `[${item.ticker}] 新着ニュース`,
+      body: item.title,
+      url: "/",
+    };
+  }
+  const tickers = [...new Set(fresh.map((i) => i.ticker))].join(" / ");
+  return {
+    title: `新着ニュース ${fresh.length}件`,
+    body: `${tickers} の最新情報が届きました`,
+    url: "/",
   };
 }
