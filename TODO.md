@@ -18,7 +18,7 @@
 | M2 | PWAフロント | `[x]` | 銘柄別一覧UI + ホーム画面追加（実装完了・PR#3 merged） |
 | M3 | AI要約 | `[x]` | 非Gemini無料LLM(Groq)で日本語要約（実装完了・PR#4 merged） |
 | M4 | プッシュ通知 | `[x]` | iOS Web Push（iOS16+）（実装完了・PR#5 merged） |
-| M5 | 本番化（手動） | `[ ]` | Notion接続・Vercelデプロイ・実機検証。手順は `docs/SETUP.md` |
+| M5 | 本番化（手動） | `[~]` | **本番稼働中**（S0-S2完了）。https://my-automation-pi.vercel.app ／ 残: S3/S4任意 |
 
 ---
 
@@ -104,12 +104,13 @@
 
 ---
 
-## M5. 本番化（手動セットアップ）　`[ ]`　← 明日ここから
+## M5. 本番化（手動セットアップ）　`[~]`　**本番稼働中** 🚀
 > 詳細手順・トラブル早見表は [`docs/SETUP.md`](docs/SETUP.md)。
+> 本番URL: https://my-automation-pi.vercel.app
 
-- [ ] **S0** ローカル準備（`npm install` / `.env.local` 作成 / `npm run dev`）🔑
-- [ ] **S1** Notion 準備（Integration作成・ニュースDB作成・接続・手動収集で疎通）🔑
-- [ ] **S2** Vercel デプロイ（リポジトリインポート・環境変数・Cron確認）🔑
+- [x] **S0** ローカル準備（`npm install` / `.env.local` 作成 / `npm run dev` 検証）
+- [x] **S1** Notion 準備（コネクト作成・ニュースDB自動作成・接続・実収集338件保存をE2E検証）
+- [x] **S2** Vercel デプロイ（インポート・環境変数4件・本番Cron収集9.2秒で完走）
 - [ ] **S3** AI要約を有効化（Groqキー・`SUMMARIZER=llm`）⭐任意
 - [ ] **S4** プッシュ通知を有効化（VAPID鍵・購読DB・iPhoneで許可）⭐任意
-- [ ] **S5** 数日運用・無料枠監視・改善Issue化
+- [ ] **S5** 運用・無料枠監視・iPhoneホーム画面追加
