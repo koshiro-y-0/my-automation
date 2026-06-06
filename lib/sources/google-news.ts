@@ -23,8 +23,10 @@ export class GoogleNewsSource implements Source {
     const feed = await this.parser.parseURL(url);
     const now = new Date().toISOString();
 
+    // 1銘柄あたりの件数を制限（Google Newsは最大100件返す。ノイズと保存量を抑制）
     return (feed.items ?? [])
       .filter((item) => item.link)
+      .slice(0, 40)
       .map((item) => ({
         ticker: ticker.ticker,
         source: this.name,
