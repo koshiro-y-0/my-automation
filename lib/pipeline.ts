@@ -74,16 +74,23 @@ export async function collect(): Promise<CollectResult> {
     });
   }
 
-  // 4. 新着を特定 → 保存
+  // 4. 新着を特定 → 1回の実行で保存する件数を上限で制限して保存。
+  //    Notion書き込みは逐次でレート制限もあり、無制限だと Vercel の関数実行時間
+  //    （無料プラン60秒）を超えてタイムアウトする。冪等性（重複排除）があるため、
+  //    上限を超えた分は次回以降の実行で取りこぼしなく保存される。
   const existing = await storage.existingIds(items.map((i) => i.id));
   const fresh = items.filter((i) => !existing.has(i.id));
-  const { saved, skipped } = await storage.saveMany(items);
+  const maxPerRun = Math.max(1, Number(process.env.MAX_SAVES_PER_RUN) || 60);
+  const toSave = fresh.slice(0, maxPerRun);
 
-  // 5. 新着があればプッシュ通知（鍵/購読未設定なら no-op）
+  const { saved } = await storage.saveMany(toSave);
+  const skipped = items.length - saved;
+
+  // 5. 実際に保存した新着があればプッシュ通知（鍵/購読未設定なら no-op）
   let notified = 0;
-  if (fresh.length > 0 && isPushEnabled()) {
+  if (toSave.length > 0 && isPushEnabled()) {
     try {
-      const r = await broadcast(buildPayload(fresh));
+      const r = await broadcast(buildPayload(toSave));
       notified = r.sent;
     } catch {
       // 通知失敗は収集結果に影響させない
