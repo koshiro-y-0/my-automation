@@ -64,7 +64,8 @@ export class LlmSummarizer implements Summarizer {
             content:
               "あなたは米国株のニュースを扱う金融アナリストです。" +
               "与えられた記事のタイトルと抜粋【だけ】を根拠に、次のJSONを返してください。" +
-              '{"summary": string, "relevance": 1-5の整数, "importance": 1-5の整数}。' +
+              '{"titleJa": string, "summary": string, "relevance": 1-5の整数, "importance": 1-5の整数}。' +
+              "titleJa は記事タイトルの自然な日本語訳（元が日本語ならそのまま、媒体名の付与は不要）。" +
               "summary は事実に忠実な日本語2文以内。本文抜粋が乏しい・無い場合は推測で内容を補わず、" +
               "タイトルを自然な日本語に言い換える程度にとどめ、与えられていない事実・数値を創作しないこと。" +
               "relevance はその記事が指定銘柄・関連テーマにどれだけ直接関係するか（5=核心、1=ほぼ無関係）。" +
@@ -87,6 +88,7 @@ export class LlmSummarizer implements Summarizer {
     if (!content) return null;
 
     const parsed = JSON.parse(content) as {
+      titleJa?: unknown;
       summary?: unknown;
       relevance?: unknown;
       importance?: unknown;
@@ -94,11 +96,15 @@ export class LlmSummarizer implements Summarizer {
     const summary =
       typeof parsed.summary === "string" ? parsed.summary.trim() : "";
     if (!summary) return null;
+    const titleJa =
+      typeof parsed.titleJa === "string" ? parsed.titleJa.trim() : "";
 
     return {
       summary,
+      titleJa,
       relevance: clampScore(parsed.relevance),
       importance: clampScore(parsed.importance),
+      enriched: true,
     };
   }
 }

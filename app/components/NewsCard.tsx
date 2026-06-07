@@ -53,7 +53,12 @@ export function NewsCard({ item }: { item: NewsItem }) {
           </>
         )}
       </div>
-      <h3 className="mt-2 font-semibold leading-snug">{item.title}</h3>
+      <h3 className="mt-2 font-semibold leading-snug">
+        {item.titleJa || item.title}
+      </h3>
+      {item.titleJa && item.titleJa !== item.title && (
+        <p className="mt-0.5 text-xs text-neutral-400 line-clamp-1">{item.title}</p>
+      )}
       {item.summary && (
         <p className="mt-1 line-clamp-3 text-sm text-neutral-600 dark:text-neutral-400">
           {item.summary}

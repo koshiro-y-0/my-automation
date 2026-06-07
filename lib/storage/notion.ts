@@ -13,6 +13,7 @@ import type {
  */
 const PROP = {
   title: "Title", // title
+  titleJa: "TitleJa", // rich_text（日本語タイトル）
   ticker: "Ticker", // select
   url: "URL", // url
   source: "Source", // select
@@ -20,6 +21,7 @@ const PROP = {
   summary: "Summary", // rich_text
   relevance: "Relevance", // number（関連度 1〜5）
   importance: "Importance", // number（重要度 1〜5）
+  enriched: "Enriched", // checkbox（AIエンリッチ済みか）
   hash: "Hash", // rich_text（id・重複チェック用）
 } as const;
 
@@ -98,6 +100,11 @@ export class NotionStorage implements StorageProvider {
         parent: { database_id: this.databaseId },
         properties: {
           [PROP.title]: { title: [{ text: { content: item.title } }] },
+          [PROP.titleJa]: {
+            rich_text: item.titleJa
+              ? [{ text: { content: truncate(item.titleJa, 1900) } }]
+              : [],
+          },
           [PROP.ticker]: { select: { name: item.ticker } },
           [PROP.url]: { url: item.url },
           [PROP.source]: { select: { name: item.source } },
@@ -107,6 +114,7 @@ export class NotionStorage implements StorageProvider {
           },
           [PROP.relevance]: { number: item.relevance },
           [PROP.importance]: { number: item.importance },
+          [PROP.enriched]: { checkbox: item.enriched },
           [PROP.hash]: { rich_text: [{ text: { content: item.id } }] },
         },
       });
@@ -118,11 +126,31 @@ export class NotionStorage implements StorageProvider {
 
   async list(opts: ListOptions = {}): Promise<NewsItem[]> {
     const dataSourceId = await this.resolveDataSourceId();
+
+    const conditions: Array<Record<string, unknown>> = [];
+    if (opts.ticker) {
+      conditions.push({
+        property: PROP.ticker,
+        select: { equals: opts.ticker },
+      });
+    }
+    if (opts.enrichedOnly) {
+      conditions.push({
+        property: PROP.enriched,
+        checkbox: { equals: true },
+      });
+    }
+    const filter =
+      conditions.length === 0
+        ? undefined
+        : conditions.length === 1
+          ? conditions[0]
+          : { and: conditions };
+
     const res = await this.client.dataSources.query({
       data_source_id: dataSourceId,
-      filter: opts.ticker
-        ? { property: PROP.ticker, select: { equals: opts.ticker } }
-        : undefined,
+      // @ts-expect-error Notion filter は型が広く、動的構築のため許容
+      filter,
       sorts: buildSorts(opts.sort),
       page_size: Math.min(opts.limit ?? 50, 100),
     });
@@ -163,6 +191,9 @@ function pageToNewsItem(page: unknown): NewsItem | null {
     (props[PROP.relevance] as { number?: number | null })?.number ?? 3;
   const importance =
     (props[PROP.importance] as { number?: number | null })?.number ?? 3;
+  const titleJa = readRichText(page, PROP.titleJa) ?? "";
+  const enriched =
+    (props[PROP.enriched] as { checkbox?: boolean })?.checkbox ?? false;
   const id = readRichText(page, PROP.hash) ?? url;
 
   if (!ticker || !source || !url) return null;
@@ -171,12 +202,14 @@ function pageToNewsItem(page: unknown): NewsItem | null {
     id,
     ticker,
     title,
+    titleJa,
     url,
     source,
     publishedAt,
     summary,
     relevance,
     importance,
+    enriched,
     createdAt:
       (page as { created_time?: string }).created_time ?? new Date().toISOString(),
   };

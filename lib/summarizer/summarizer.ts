@@ -1,15 +1,19 @@
 import type { RawArticle } from "@/lib/types";
 
 /**
- * 記事1件のAIエンリッチ結果（設計書 §6 / 機能拡張: ★評価）。
+ * 記事1件のAIエンリッチ結果（設計書 §6 / 機能拡張: ★評価・翻訳）。
  * - summary: 日本語要約
+ * - titleJa: 日本語タイトル（英語記事は翻訳。日本語記事は原題のままでよい）
  * - relevance: 関連度 1〜5（銘柄・テーマへの関連性）
  * - importance: 重要度 1〜5（市場・投資判断へのインパクト）
+ * - enriched: AI（LLM）が実際に生成したか（Passthrough/フォールバックは false）
  */
 export interface Enrichment {
   summary: string;
+  titleJa: string;
   relevance: number;
   importance: number;
+  enriched: boolean;
 }
 
 /**

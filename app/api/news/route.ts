@@ -30,10 +30,11 @@ export async function GET(request: Request): Promise<Response> {
   const sortParam = searchParams.get("sort");
   const sort =
     sortParam && VALID_SORTS.has(sortParam) ? (sortParam as SortKey) : "latest";
+  const enrichedOnly = searchParams.get("enriched") === "1";
 
   try {
     const storage = getStorage();
-    const items = await storage.list({ ticker, limit, sort });
+    const items = await storage.list({ ticker, limit, sort, enrichedOnly });
     return NextResponse.json({ configured: true, items });
   } catch (e) {
     // 環境変数未設定や Notion 接続失敗はユーザー向けに穏当に扱う

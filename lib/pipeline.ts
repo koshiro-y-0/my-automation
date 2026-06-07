@@ -71,13 +71,17 @@ export async function collect(): Promise<CollectResult> {
   const toSave: NewsItem[] = [];
   for (const [id, article] of freshArticles) {
     let summary = article.excerpt || article.title;
+    let titleJa = "";
     let relevance = 3;
     let importance = 3;
+    let enriched = false;
     try {
       const e = await summarizer.enrich(article);
       summary = e.summary;
+      titleJa = e.titleJa;
       relevance = e.relevance;
       importance = e.importance;
+      enriched = e.enriched;
     } catch {
       // enrich は内部でフォールバックするが、念のため既定値を維持
     }
@@ -85,12 +89,14 @@ export async function collect(): Promise<CollectResult> {
       id,
       ticker: article.ticker,
       title: article.title,
+      titleJa,
       url: article.url,
       source: article.source,
       publishedAt: article.publishedAt,
       summary,
       relevance,
       importance,
+      enriched,
       createdAt: now,
     });
   }

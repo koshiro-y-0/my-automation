@@ -43,6 +43,8 @@ export interface NewsItem {
   readonly id: string;
   readonly ticker: Ticker;
   readonly title: string;
+  /** 日本語タイトル（英語記事はAIが翻訳。無い場合は空文字）。 */
+  readonly titleJa: string;
   readonly url: string;
   readonly source: SourceName;
   readonly publishedAt: string;
@@ -51,5 +53,7 @@ export interface NewsItem {
   readonly relevance: number;
   /** 重要度（市場・投資判断へのインパクト）1〜5。未採点は 3（中立）。 */
   readonly importance: number;
+  /** AI（LLM）で要約・採点・翻訳済みか。AI要約専用ページの抽出に使う。 */
+  readonly enriched: boolean;
   readonly createdAt: string;
 }
