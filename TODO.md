@@ -16,7 +16,7 @@
 | M0 | 環境構築・設計 | `[x]` | リポジトリ初期化・設計書・CLAUDE.md |
 | M1 | 収集パイプライン（最優先） | `[x]` | RSS/SEC収集 → Notion保存 → Cron。**手動コピペ解消**（実装完了・PR#2 merged） |
 | M2 | PWAフロント | `[x]` | 銘柄別一覧UI + ホーム画面追加（実装完了・PR#3 merged） |
-| M3 | AI要約 | `[x]` | 非Gemini無料LLM(Groq)で日本語要約（実装完了・PR#4 merged） |
+| M3 | AI要約 | `[x]` | 非Gemini無料LLM(Groq)で日本語要約（**本番有効化済**・PR#4/#9/#10） |
 | M4 | プッシュ通知 | `[x]` | iOS Web Push（iOS16+）（実装完了・PR#5 merged） |
 | M5 | 本番化（手動） | `[~]` | **本番稼働中**（S0-S2完了）。https://my-automation-pi.vercel.app ／ 残: S3/S4任意 |
 
@@ -81,13 +81,15 @@
 
 ---
 
-## M3. AI要約 `feat/ai-summary`　`[~]`
+## M3. AI要約 `feat/ai-summary`　`[x]`
 - [x] LLMプロバイダ選定 → **Groq**（非Gemini・無料枠・OpenAI互換）
 - [x] `lib/summarizer/llm.ts` — `LlmSummarizer`（日本語要約、fetchのみ）
 - [x] `SUMMARIZER=llm` で切替（factory配線）
 - [x] フォールバック（キー未設定/API失敗→Passthrough）を実機検証
-- [ ] 実 GROQ_API_KEY での要約品質確認
-- [ ] PR作成・マージ
+- [x] 実 GROQ_API_KEY での要約品質確認（本番で新着がAI日本語要約になることを確認）
+- [x] プロンプト堅牢化でハルシネーション抑制（PR#9）
+- [x] 要約を新着のみに限定しレート制限フォールバック解消（PR#10）
+- [x] PR作成・マージ（PR#4 / #9 / #10）
 
 ---
 
@@ -111,6 +113,6 @@
 - [x] **S0** ローカル準備（`npm install` / `.env.local` 作成 / `npm run dev` 検証）
 - [x] **S1** Notion 準備（コネクト作成・ニュースDB自動作成・接続・実収集338件保存をE2E検証）
 - [x] **S2** Vercel デプロイ（インポート・環境変数4件・本番Cron収集9.2秒で完走）
-- [ ] **S3** AI要約を有効化（Groqキー・`SUMMARIZER=llm`）⭐任意
+- [x] **S3** AI要約を有効化（Groqキー・`SUMMARIZER=llm`）— 本番で新着がAI日本語要約になることを確認
 - [ ] **S4** プッシュ通知を有効化（VAPID鍵・購読DB・iPhoneで許可）⭐任意
 - [ ] **S5** 運用・無料枠監視・iPhoneホーム画面追加
