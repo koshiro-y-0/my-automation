@@ -3,6 +3,7 @@ import type { NewsItem, SourceName, Ticker } from "@/lib/types";
 import type {
   ListOptions,
   SaveResult,
+  SortKey,
   StorageProvider,
 } from "./provider";
 
@@ -122,7 +123,7 @@ export class NotionStorage implements StorageProvider {
       filter: opts.ticker
         ? { property: PROP.ticker, select: { equals: opts.ticker } }
         : undefined,
-      sorts: [{ property: PROP.publishedAt, direction: "descending" }],
+      sorts: buildSorts(opts.sort),
       page_size: Math.min(opts.limit ?? 50, 100),
     });
 
@@ -183,4 +184,27 @@ function pageToNewsItem(page: unknown): NewsItem | null {
 
 function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max) : s;
+}
+
+/**
+ * 並び順を Notion の sorts 配列に変換する。
+ * 関連度/重要度はスコア降順 → 同点は公開日時の新しい順を第2キーにする。
+ */
+function buildSorts(sort: SortKey = "latest") {
+  const byDate = { property: PROP.publishedAt, direction: "descending" as const };
+  switch (sort) {
+    case "relevance":
+      return [
+        { property: PROP.relevance, direction: "descending" as const },
+        byDate,
+      ];
+    case "importance":
+      return [
+        { property: PROP.importance, direction: "descending" as const },
+        byDate,
+      ];
+    case "latest":
+    default:
+      return [byDate];
+  }
 }

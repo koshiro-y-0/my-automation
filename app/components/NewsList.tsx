@@ -13,6 +13,14 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]["key"];
 
+const SORTS = [
+  { key: "latest", label: "最新順" },
+  { key: "relevance", label: "関連度順" },
+  { key: "importance", label: "重要順" },
+] as const;
+
+type SortKey = (typeof SORTS)[number]["key"];
+
 interface NewsResponse {
   configured: boolean;
   items: NewsItem[];
@@ -21,6 +29,7 @@ interface NewsResponse {
 
 export function NewsList() {
   const [tab, setTab] = useState<TabKey>("ALL");
+  const [sort, setSort] = useState<SortKey>("latest");
   const [items, setItems] = useState<NewsItem[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "unconfigured" | "error">(
     "loading",
@@ -29,9 +38,13 @@ export function NewsList() {
   useEffect(() => {
     let cancelled = false;
     setStatus("loading");
-    const qs = tab === "ALL" ? "" : `?ticker=${tab}`;
 
-    fetch(`/api/news${qs}`)
+    const params = new URLSearchParams();
+    if (tab !== "ALL") params.set("ticker", tab);
+    if (sort !== "latest") params.set("sort", sort);
+    const qs = params.toString();
+
+    fetch(`/api/news${qs ? `?${qs}` : ""}`)
       .then((r) => r.json() as Promise<NewsResponse>)
       .then((data) => {
         if (cancelled) return;
@@ -45,10 +58,11 @@ export function NewsList() {
     return () => {
       cancelled = true;
     };
-  }, [tab]);
+  }, [tab, sort]);
 
   return (
     <div>
+      {/* 銘柄タブ */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist">
         {TABS.map((t) => (
           <button
@@ -66,6 +80,28 @@ export function NewsList() {
             {t.label}
           </button>
         ))}
+      </div>
+
+      {/* 並び替え */}
+      <div className="mt-3 flex items-center gap-2">
+        <span className="text-xs text-neutral-400">並び替え</span>
+        <div className="flex gap-1">
+          {SORTS.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              aria-pressed={sort === s.key}
+              onClick={() => setSort(s.key)}
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                sort === s.key
+                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                  : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="mt-5">
