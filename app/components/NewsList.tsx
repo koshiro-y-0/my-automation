@@ -4,15 +4,6 @@ import { useEffect, useState } from "react";
 import type { NewsItem } from "@/lib/types";
 import { NewsCard } from "./NewsCard";
 
-const TABS = [
-  { key: "ALL", label: "すべて" },
-  { key: "IONQ", label: "IONQ" },
-  { key: "XE", label: "X-energy" },
-  { key: "ANTHROPIC", label: "Anthropic" },
-] as const;
-
-type TabKey = (typeof TABS)[number]["key"];
-
 const SORTS = [
   { key: "latest", label: "最新順" },
   { key: "relevance", label: "関連度順" },
@@ -21,19 +12,48 @@ const SORTS = [
 
 type SortKey = (typeof SORTS)[number]["key"];
 
+interface TabItem {
+  key: string;
+  label: string;
+}
+
 interface NewsResponse {
   configured: boolean;
   items: NewsItem[];
   message?: string;
 }
 
+const ALL_TAB: TabItem = { key: "ALL", label: "すべて" };
+
 export function NewsList({ enrichedOnly = false }: { enrichedOnly?: boolean } = {}) {
-  const [tab, setTab] = useState<TabKey>("ALL");
+  const [tabs, setTabs] = useState<TabItem[]>([ALL_TAB]);
+  const [tab, setTab] = useState<string>("ALL");
   const [sort, setSort] = useState<SortKey>("latest");
   const [items, setItems] = useState<NewsItem[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "unconfigured" | "error">(
     "loading",
   );
+
+  // 監視銘柄を取得してタブを構築（動的に追加された企業も反映）
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/tickers")
+      .then((r) => r.json() as Promise<{ tickers: { ticker: string; name: string }[] }>)
+      .then((data) => {
+        if (cancelled) return;
+        const dynamic = (data.tickers ?? []).map((t) => ({
+          key: t.ticker,
+          label: t.name || t.ticker,
+        }));
+        setTabs([ALL_TAB, ...dynamic]);
+      })
+      .catch(() => {
+        /* 取得失敗時は「すべて」タブのみ */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +85,7 @@ export function NewsList({ enrichedOnly = false }: { enrichedOnly?: boolean } = 
     <div>
       {/* 銘柄タブ */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.key}
             type="button"

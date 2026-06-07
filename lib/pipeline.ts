@@ -1,4 +1,4 @@
-import { TICKERS } from "@/lib/config/tickers";
+import { getTickers } from "@/lib/config/ticker-store";
 import { urlToId } from "@/lib/hash";
 import { broadcast, isPushEnabled } from "@/lib/push/notifier";
 import { getSources } from "@/lib/sources";
@@ -31,8 +31,11 @@ export async function collect(): Promise<CollectResult> {
   const errors: string[] = [];
   const raw: RawArticle[] = [];
 
+  // 監視銘柄を取得（Notion設定DB優先、未設定なら静的既定）
+  const tickers = await getTickers();
+
   // 1. 取得（ソース×銘柄。失敗は握って継続）
-  for (const ticker of TICKERS) {
+  for (const ticker of tickers) {
     for (const source of sources) {
       try {
         const articles = await source.fetch(ticker);

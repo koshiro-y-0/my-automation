@@ -1,13 +1,6 @@
 import Parser from "rss-parser";
-import type { RawArticle, Ticker, TickerConfig } from "@/lib/types";
+import type { RawArticle, TickerConfig } from "@/lib/types";
 import { type Source, cleanExcerpt } from "./source";
-
-/** Yahoo Finance のシンボル。未上場銘柄は対象外（undefined）。 */
-const YAHOO_SYMBOL: Partial<Record<Ticker, string>> = {
-  IONQ: "IONQ",
-  XE: "XE",
-  // ANTHROPIC は未上場のため Yahoo Finance の対象外
-};
 
 /**
  * Yahoo Finance のヘッドラインRSSから株価ニュースを取得する。
@@ -26,8 +19,8 @@ export class YahooFinanceSource implements Source {
   });
 
   async fetch(ticker: TickerConfig): Promise<RawArticle[]> {
-    const symbol = YAHOO_SYMBOL[ticker.ticker];
-    if (!symbol) return [];
+    const symbol = ticker.yahooSymbol;
+    if (!symbol) return []; // 上場シンボル未設定なら対象外
 
     const url = `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(
       symbol,

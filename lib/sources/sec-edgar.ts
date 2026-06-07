@@ -1,4 +1,4 @@
-import type { RawArticle, Ticker, TickerConfig } from "@/lib/types";
+import type { RawArticle, TickerConfig } from "@/lib/types";
 import type { Source } from "./source";
 
 /**
@@ -8,16 +8,6 @@ import type { Source } from "./source";
  */
 const SEC_USER_AGENT =
   process.env.SEC_USER_AGENT ?? "my-automation/0.1 (contact: koshiro49@icloud.com)";
-
-/**
- * SEC EDGAR の CIK（ゼロ埋め10桁）。
- * 未上場/CIK不明の銘柄は対象外（SEC開示は存在しないため）。
- */
-const CIK: Partial<Record<Ticker, string>> = {
-  IONQ: "0001824920",
-  // XE: SPAC合併が解消され公開企業ではないため対象外
-  // ANTHROPIC: 未上場のため対象外
-};
 
 /** 収集対象とする主要な開示フォーム（持株報告 3/4/5 等のノイズは除外） */
 const RELEVANT_FORMS = new Set([
@@ -53,8 +43,8 @@ export class SecEdgarSource implements Source {
   readonly name = "sec_edgar" as const;
 
   async fetch(ticker: TickerConfig): Promise<RawArticle[]> {
-    const cik = CIK[ticker.ticker];
-    if (!cik) return [];
+    const cik = normalizeCik(ticker.cik);
+    if (!cik) return []; // CIK未設定なら対象外
 
     const res = await fetch(
       `https://data.sec.gov/submissions/CIK${cik}.json`,
@@ -92,4 +82,12 @@ export class SecEdgarSource implements Source {
 
     return out;
   }
+}
+
+/** CIK をゼロ埋め10桁に正規化する（数字以外・空は undefined）。 */
+function normalizeCik(cik: string | undefined): string | undefined {
+  if (!cik) return undefined;
+  const digits = cik.replace(/\D/g, "");
+  if (!digits) return undefined;
+  return digits.padStart(10, "0");
 }

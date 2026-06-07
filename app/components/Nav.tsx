@@ -18,6 +18,13 @@ export function Nav({ active }: { active: "home" | "digest" }) {
       >
         ✨ AI要約
       </Link>
+      <Link
+        href="/admin"
+        className={`${base} ${off} ml-auto`}
+        title="監視企業の管理"
+      >
+        ⚙︎
+      </Link>
     </nav>
   );
 }
