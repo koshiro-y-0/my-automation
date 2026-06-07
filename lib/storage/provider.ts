@@ -1,9 +1,14 @@
 import type { NewsItem, Ticker } from "@/lib/types";
 
+/** 並び順の種別 */
+export type SortKey = "latest" | "relevance" | "importance";
+
 /** 一覧取得のオプション */
 export interface ListOptions {
   ticker?: Ticker;
   limit?: number;
+  /** 並び順（既定: latest = 公開日時の新しい順） */
+  sort?: SortKey;
 }
 
 /** 保存結果のサマリ */

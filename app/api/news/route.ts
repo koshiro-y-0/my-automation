@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStorage } from "@/lib/storage";
+import type { SortKey } from "@/lib/storage";
 import type { Ticker } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -7,6 +8,11 @@ export const runtime = "nodejs";
 export const revalidate = 300;
 
 const VALID_TICKERS: ReadonlySet<string> = new Set(["IONQ", "XE", "ANTHROPIC"]);
+const VALID_SORTS: ReadonlySet<string> = new Set([
+  "latest",
+  "relevance",
+  "importance",
+]);
 
 /**
  * PWA 向けニュース読み出しAPI。
@@ -21,10 +27,13 @@ export async function GET(request: Request): Promise<Response> {
       ? (tickerParam as Ticker)
       : undefined;
   const limit = Math.min(Number(searchParams.get("limit")) || 50, 100);
+  const sortParam = searchParams.get("sort");
+  const sort =
+    sortParam && VALID_SORTS.has(sortParam) ? (sortParam as SortKey) : "latest";
 
   try {
     const storage = getStorage();
-    const items = await storage.list({ ticker, limit });
+    const items = await storage.list({ ticker, limit, sort });
     return NextResponse.json({ configured: true, items });
   } catch (e) {
     // 環境変数未設定や Notion 接続失敗はユーザー向けに穏当に扱う
