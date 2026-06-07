@@ -1,6 +1,7 @@
 import { NewsList } from "./components/NewsList";
 import { EnablePushButton } from "./components/EnablePushButton";
 import { Nav } from "./components/Nav";
+import { UsageGauges } from "./components/UsageGauges";
 
 export default function Home() {
   return (
@@ -22,6 +23,7 @@ export default function Home() {
         </div>
       </header>
       <NewsList />
+      <UsageGauges />
     </main>
   );
 }

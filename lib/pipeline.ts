@@ -4,6 +4,9 @@ import { broadcast, isPushEnabled } from "@/lib/push/notifier";
 import { getSources } from "@/lib/sources";
 import { getStorage } from "@/lib/storage";
 import { getSummarizer } from "@/lib/summarizer";
+import { PassthroughSummarizer } from "@/lib/summarizer/passthrough";
+import { getGroqStats, resetGroqStats } from "@/lib/summarizer/llm";
+import { addUsage, getUsage, isGroqLocked } from "@/lib/usage/usage";
 import type { NewsItem, RawArticle } from "@/lib/types";
 
 export interface CollectResult {
@@ -12,6 +15,7 @@ export interface CollectResult {
   saved: number;
   skipped: number;
   notified: number;
+  groqLocked: boolean;
   errors: string[];
 }
 
@@ -25,8 +29,13 @@ export interface CollectResult {
  */
 export async function collect(): Promise<CollectResult> {
   const sources = getSources();
-  const summarizer = getSummarizer();
   const storage = getStorage();
+
+  // Groqが当日上限でロック中なら要約はPassthroughに切替（無駄打ち・課金リスク回避）
+  resetGroqStats();
+  const usageBefore = await getUsage();
+  const groqLocked = isGroqLocked(usageBefore);
+  const summarizer = groqLocked ? new PassthroughSummarizer() : getSummarizer();
 
   const errors: string[] = [];
   const raw: RawArticle[] = [];
@@ -119,11 +128,23 @@ export async function collect(): Promise<CollectResult> {
     }
   }
 
+  // 7. API使用量を記録（機能5: Groqはヘッダー計測、Notion書込は概算=保存件数）
+  const g = getGroqStats();
+  await addUsage({
+    groqRequests: g.requests,
+    groqTokens: g.tokens,
+    notionWrites: saved,
+    collectRuns: 1,
+    groqResetAt: g.resetAt || undefined,
+    groqLimited: g.limited || undefined,
+  });
+
   return {
     fetched: raw.length,
     unique: byId.size,
     saved,
     skipped,
+    groqLocked,
     notified,
     errors,
   };
