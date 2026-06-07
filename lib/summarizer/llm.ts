@@ -2,6 +2,50 @@ import type { RawArticle } from "@/lib/types";
 import { type Enrichment, type Summarizer, clampScore } from "./summarizer";
 
 /**
+ * 1回の collect 実行中の Groq 使用量アキュムレータ（機能5: 消費量計測）。
+ * pipeline が実行前に reset、実行後に読み取って Notion に記録する。
+ */
+export interface GroqRunStats {
+  requests: number;
+  tokens: number;
+  /** 直近レスポンスの残りリクエスト数（取得できた場合） */
+  remainingRequests: number | null;
+  /** レート制限のリセットISO時刻（推定。取得できた場合） */
+  resetAt: string;
+  /** 429（レート上限）に当たったか */
+  limited: boolean;
+}
+
+let groqStats: GroqRunStats = freshStats();
+
+function freshStats(): GroqRunStats {
+  return { requests: 0, tokens: 0, remainingRequests: null, resetAt: "", limited: false };
+}
+
+export function resetGroqStats(): void {
+  groqStats = freshStats();
+}
+
+export function getGroqStats(): GroqRunStats {
+  return groqStats;
+}
+
+/** "2m59.56s" / "45s" / "120" などの Groq reset 表記を秒に変換。 */
+function parseResetSeconds(v: string | null): number | null {
+  if (!v) return null;
+  const s = v.trim();
+  if (/^\d+(\.\d+)?$/.test(s)) return Number(s);
+  let total = 0;
+  const m = s.match(/(\d+(?:\.\d+)?)\s*m/);
+  const sec = s.match(/(\d+(?:\.\d+)?)\s*s/);
+  const h = s.match(/(\d+(?:\.\d+)?)\s*h/);
+  if (h) total += Number(h[1]) * 3600;
+  if (m) total += Number(m[1]) * 60;
+  if (sec) total += Number(sec[1]);
+  return total || null;
+}
+
+/**
  * Groq（非Gemini・無料枠・OpenAI互換API）で
  * 日本語要約＋関連度・重要度スコアを「1回の呼び出し」で生成する Summarizer。
  *
@@ -77,13 +121,30 @@ export class LlmSummarizer implements Summarizer {
       }),
     });
 
+    // 使用量計測（機能5）: リクエスト数・残量・リセット時刻を捕捉
+    groqStats.requests += 1;
+    const remaining = res.headers.get("x-ratelimit-remaining-requests");
+    if (remaining !== null) groqStats.remainingRequests = Number(remaining);
+    const resetSec = parseResetSeconds(
+      res.headers.get("x-ratelimit-reset-requests"),
+    );
+    if (resetSec !== null) {
+      groqStats.resetAt = new Date(Date.now() + resetSec * 1000).toISOString();
+    }
+
+    if (res.status === 429) {
+      groqStats.limited = true;
+      throw new Error("Groq rate limited (429)");
+    }
     if (!res.ok) {
       throw new Error(`Groq responded ${res.status}`);
     }
 
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
+      usage?: { total_tokens?: number };
     };
+    groqStats.tokens += data.usage?.total_tokens ?? 0;
     const content = data.choices?.[0]?.message?.content;
     if (!content) return null;
 
