@@ -52,17 +52,30 @@ export async function collect(): Promise<CollectResult> {
     if (!byId.has(id)) byId.set(id, article);
   }
 
-  // 3. 要約 → NewsItem 化
+  // 3. 新着を特定（保存・要約の前に行う）。
+  //    既存記事はここで除外することで、後段の要約（外部LLM呼び出し）を
+  //    新着分だけに限定する。1回の実行件数は上限で制限し、Vercelの実行時間
+  //    （無料プラン60秒）とLLM無料枠のレート制限の両方を超えないようにする。
+  //    冪等性（URLハッシュ）により、上限超過分は次回以降に取りこぼしなく保存される。
+  const allIds = [...byId.keys()];
+  const existing = await storage.existingIds(allIds);
+  const maxPerRun = Math.max(1, Number(process.env.MAX_SAVES_PER_RUN) || 60);
+  const freshArticles = allIds
+    .filter((id) => !existing.has(id))
+    .slice(0, maxPerRun)
+    .map((id) => [id, byId.get(id)!] as const);
+
+  // 4. 新着のみ要約 → NewsItem 化（LLM呼び出しは新着件数だけに抑制）
   const now = new Date().toISOString();
-  const items: NewsItem[] = [];
-  for (const [id, article] of byId) {
+  const toSave: NewsItem[] = [];
+  for (const [id, article] of freshArticles) {
     let summary: string;
     try {
       summary = await summarizer.summarize(article);
     } catch {
       summary = article.excerpt || article.title; // 要約失敗時はフォールバック
     }
-    items.push({
+    toSave.push({
       id,
       ticker: article.ticker,
       title: article.title,
@@ -74,19 +87,11 @@ export async function collect(): Promise<CollectResult> {
     });
   }
 
-  // 4. 新着を特定 → 1回の実行で保存する件数を上限で制限して保存。
-  //    Notion書き込みは逐次でレート制限もあり、無制限だと Vercel の関数実行時間
-  //    （無料プラン60秒）を超えてタイムアウトする。冪等性（重複排除）があるため、
-  //    上限を超えた分は次回以降の実行で取りこぼしなく保存される。
-  const existing = await storage.existingIds(items.map((i) => i.id));
-  const fresh = items.filter((i) => !existing.has(i.id));
-  const maxPerRun = Math.max(1, Number(process.env.MAX_SAVES_PER_RUN) || 60);
-  const toSave = fresh.slice(0, maxPerRun);
-
+  // 5. 保存
   const { saved } = await storage.saveMany(toSave);
-  const skipped = items.length - saved;
+  const skipped = byId.size - saved;
 
-  // 5. 実際に保存した新着があればプッシュ通知（鍵/購読未設定なら no-op）
+  // 6. 実際に保存した新着があればプッシュ通知（鍵/購読未設定なら no-op）
   let notified = 0;
   if (toSave.length > 0 && isPushEnabled()) {
     try {
@@ -99,7 +104,7 @@ export async function collect(): Promise<CollectResult> {
 
   return {
     fetched: raw.length,
-    unique: items.length,
+    unique: byId.size,
     saved,
     skipped,
     notified,
