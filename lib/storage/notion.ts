@@ -17,6 +17,8 @@ const PROP = {
   source: "Source", // select
   publishedAt: "PublishedAt", // date
   summary: "Summary", // rich_text
+  relevance: "Relevance", // number（関連度 1〜5）
+  importance: "Importance", // number（重要度 1〜5）
   hash: "Hash", // rich_text（id・重複チェック用）
 } as const;
 
@@ -102,6 +104,8 @@ export class NotionStorage implements StorageProvider {
           [PROP.summary]: {
             rich_text: [{ text: { content: truncate(item.summary, 1900) } }],
           },
+          [PROP.relevance]: { number: item.relevance },
+          [PROP.importance]: { number: item.importance },
           [PROP.hash]: { rich_text: [{ text: { content: item.id } }] },
         },
       });
@@ -154,6 +158,10 @@ function pageToNewsItem(page: unknown): NewsItem | null {
   const summary =
     (props[PROP.summary] as { rich_text?: Array<{ plain_text?: string }> })
       ?.rich_text?.[0]?.plain_text ?? "";
+  const relevance =
+    (props[PROP.relevance] as { number?: number | null })?.number ?? 3;
+  const importance =
+    (props[PROP.importance] as { number?: number | null })?.number ?? 3;
   const id = readRichText(page, PROP.hash) ?? url;
 
   if (!ticker || !source || !url) return null;
@@ -166,6 +174,8 @@ function pageToNewsItem(page: unknown): NewsItem | null {
     source,
     publishedAt,
     summary,
+    relevance,
+    importance,
     createdAt:
       (page as { created_time?: string }).created_time ?? new Date().toISOString(),
   };
