@@ -65,15 +65,21 @@ export async function collect(): Promise<CollectResult> {
     .slice(0, maxPerRun)
     .map((id) => [id, byId.get(id)!] as const);
 
-  // 4. 新着のみ要約 → NewsItem 化（LLM呼び出しは新着件数だけに抑制）
+  // 4. 新着のみエンリッチ（要約＋関連度・重要度）→ NewsItem 化
+  //    LLM呼び出しは新着件数だけに抑制。失敗時は enrich 内部でフォールバック済み。
   const now = new Date().toISOString();
   const toSave: NewsItem[] = [];
   for (const [id, article] of freshArticles) {
-    let summary: string;
+    let summary = article.excerpt || article.title;
+    let relevance = 3;
+    let importance = 3;
     try {
-      summary = await summarizer.summarize(article);
+      const e = await summarizer.enrich(article);
+      summary = e.summary;
+      relevance = e.relevance;
+      importance = e.importance;
     } catch {
-      summary = article.excerpt || article.title; // 要約失敗時はフォールバック
+      // enrich は内部でフォールバックするが、念のため既定値を維持
     }
     toSave.push({
       id,
@@ -83,6 +89,8 @@ export async function collect(): Promise<CollectResult> {
       source: article.source,
       publishedAt: article.publishedAt,
       summary,
+      relevance,
+      importance,
       createdAt: now,
     });
   }

@@ -47,5 +47,9 @@ export interface NewsItem {
   readonly source: SourceName;
   readonly publishedAt: string;
   readonly summary: string;
+  /** 関連度（銘柄・テーマへの関連性）1〜5。未採点は 3（中立）。 */
+  readonly relevance: number;
+  /** 重要度（市場・投資判断へのインパクト）1〜5。未採点は 3（中立）。 */
+  readonly importance: number;
   readonly createdAt: string;
 }

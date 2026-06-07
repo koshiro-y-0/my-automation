@@ -17,6 +17,22 @@ function formatDate(iso: string): string {
   });
 }
 
+/** 1〜5 の評価を★で表示する小コンポーネント。 */
+function Stars({ label, value }: { label: string; value: number }) {
+  const v = Math.min(5, Math.max(0, Math.round(value)));
+  return (
+    <span className="inline-flex items-center gap-1" title={`${label} ${v}/5`}>
+      <span className="text-[10px] text-neutral-400">{label}</span>
+      <span className="text-amber-500" aria-hidden>
+        {"★".repeat(v)}
+        <span className="text-neutral-300 dark:text-neutral-600">
+          {"★".repeat(5 - v)}
+        </span>
+      </span>
+    </span>
+  );
+}
+
 export function NewsCard({ item }: { item: NewsItem }) {
   return (
     <a
@@ -43,6 +59,10 @@ export function NewsCard({ item }: { item: NewsItem }) {
           {item.summary}
         </p>
       )}
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <Stars label="関連" value={item.relevance} />
+        <Stars label="重要" value={item.importance} />
+      </div>
     </a>
   );
 }
