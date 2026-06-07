@@ -1,8 +1,9 @@
 import type { TickerConfig } from "@/lib/types";
 
 /**
- * 監視銘柄の定義。設計書 docs/design.md §5。
- * 拡張余地: 無料枠内で最大10銘柄まで（計画書 5-4）。
+ * 既定の監視銘柄（設計書 docs/design.md §5）。
+ * 企業の動的追加は Notion 設定DB（lib/config/ticker-store.ts）で行い、
+ * 設定DB未構成時はこの静的リストにフォールバックする。
  */
 export const TICKERS: readonly TickerConfig[] = [
   {
@@ -16,6 +17,8 @@ export const TICKERS: readonly TickerConfig[] = [
       "IBM quantum",
       "Google quantum",
     ],
+    yahooSymbol: "IONQ",
+    cik: "0001824920",
   },
   {
     ticker: "XE",
@@ -28,6 +31,7 @@ export const TICKERS: readonly TickerConfig[] = [
       "small modular reactor",
       "エネルギー政策",
     ],
+    yahooSymbol: "XE",
   },
   {
     ticker: "ANTHROPIC",

@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 import { getStorage } from "@/lib/storage";
 import type { SortKey } from "@/lib/storage";
-import type { Ticker } from "@/lib/types";
 
 export const runtime = "nodejs";
 // Notion から都度読むが、表示の体感速度のため短時間キャッシュ（無料枠にも優しい）
 export const revalidate = 300;
 
-const VALID_TICKERS: ReadonlySet<string> = new Set(["IONQ", "XE", "ANTHROPIC"]);
 const VALID_SORTS: ReadonlySet<string> = new Set([
   "latest",
   "relevance",
   "importance",
 ]);
+// 銘柄は動的に増えるため、形式（英数字・ハイフン）だけを軽く検証する。
+const TICKER_RE = /^[A-Za-z0-9._-]{1,20}$/;
 
 /**
  * PWA 向けニュース読み出しAPI。
@@ -23,9 +23,7 @@ export async function GET(request: Request): Promise<Response> {
   const { searchParams } = new URL(request.url);
   const tickerParam = searchParams.get("ticker");
   const ticker =
-    tickerParam && VALID_TICKERS.has(tickerParam)
-      ? (tickerParam as Ticker)
-      : undefined;
+    tickerParam && TICKER_RE.test(tickerParam) ? tickerParam : undefined;
   const limit = Math.min(Number(searchParams.get("limit")) || 50, 100);
   const sortParam = searchParams.get("sort");
   const sort =
