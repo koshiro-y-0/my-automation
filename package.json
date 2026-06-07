@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "gen:vapid": "node scripts/gen-vapid.mjs"
+    "gen:vapid": "node scripts/gen-vapid.mjs",
+    "backfill": "tsx scripts/backfill-enrich.ts"
   },
   "dependencies": {
     "@notionhq/client": "^5.22.0",
@@ -26,6 +27,7 @@
     "@types/react-dom": "^19.0.0",
     "@types/web-push": "^3.6.4",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.7.0"
   }
 }

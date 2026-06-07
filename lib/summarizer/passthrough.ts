@@ -9,8 +9,10 @@ export class PassthroughSummarizer implements Summarizer {
   async enrich(article: RawArticle): Promise<Enrichment> {
     return {
       summary: article.excerpt.trim() || article.title,
+      titleJa: "",
       relevance: 3,
       importance: 3,
+      enriched: false,
     };
   }
 }

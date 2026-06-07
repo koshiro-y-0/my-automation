@@ -9,6 +9,8 @@ export interface ListOptions {
   limit?: number;
   /** 並び順（既定: latest = 公開日時の新しい順） */
   sort?: SortKey;
+  /** true の場合、AI（LLM）でエンリッチ済みの記事のみを返す（AI要約専用ページ用）。 */
+  enrichedOnly?: boolean;
 }
 
 /** 保存結果のサマリ */

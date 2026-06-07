@@ -27,7 +27,7 @@ interface NewsResponse {
   message?: string;
 }
 
-export function NewsList() {
+export function NewsList({ enrichedOnly = false }: { enrichedOnly?: boolean } = {}) {
   const [tab, setTab] = useState<TabKey>("ALL");
   const [sort, setSort] = useState<SortKey>("latest");
   const [items, setItems] = useState<NewsItem[]>([]);
@@ -42,6 +42,7 @@ export function NewsList() {
     const params = new URLSearchParams();
     if (tab !== "ALL") params.set("ticker", tab);
     if (sort !== "latest") params.set("sort", sort);
+    if (enrichedOnly) params.set("enriched", "1");
     const qs = params.toString();
 
     fetch(`/api/news${qs ? `?${qs}` : ""}`)
@@ -58,7 +59,7 @@ export function NewsList() {
     return () => {
       cancelled = true;
     };
-  }, [tab, sort]);
+  }, [tab, sort, enrichedOnly]);
 
   return (
     <div>
