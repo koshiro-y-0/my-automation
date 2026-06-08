@@ -3,12 +3,17 @@ import type { NewsItem, Ticker } from "@/lib/types";
 /** 並び順の種別 */
 export type SortKey = "latest" | "relevance" | "importance";
 
+/** 並び方向 */
+export type SortDirection = "asc" | "desc";
+
 /** 一覧取得のオプション */
 export interface ListOptions {
   ticker?: Ticker;
   limit?: number;
   /** 並び順（既定: latest = 公開日時の新しい順） */
   sort?: SortKey;
+  /** 並び方向（既定: desc = 降順） */
+  direction?: SortDirection;
   /** true の場合、AI（LLM）でエンリッチ済みの記事のみを返す（AI要約専用ページ用）。 */
   enrichedOnly?: boolean;
 }

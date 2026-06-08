@@ -1,7 +1,13 @@
 import type { StorageProvider } from "./provider";
 import { NotionStorage } from "./notion";
 
-export type { StorageProvider, ListOptions, SaveResult, SortKey } from "./provider";
+export type {
+  StorageProvider,
+  ListOptions,
+  SaveResult,
+  SortKey,
+  SortDirection,
+} from "./provider";
 
 /**
  * 既定の StorageProvider を返すファクトリ。

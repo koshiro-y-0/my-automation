@@ -22,8 +22,10 @@ export default function Home() {
           <Nav active="home" />
         </div>
       </header>
-      <NewsList />
       <UsageGauges />
+      <div className="mt-6">
+        <NewsList />
+      </div>
     </main>
   );
 }

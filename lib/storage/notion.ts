@@ -3,6 +3,7 @@ import type { NewsItem, SourceName, Ticker } from "@/lib/types";
 import type {
   ListOptions,
   SaveResult,
+  SortDirection,
   SortKey,
   StorageProvider,
 } from "./provider";
@@ -151,7 +152,7 @@ export class NotionStorage implements StorageProvider {
       data_source_id: dataSourceId,
       // @ts-expect-error Notion filter は型が広く、動的構築のため許容
       filter,
-      sorts: buildSorts(opts.sort),
+      sorts: buildSorts(opts.sort, opts.direction),
       page_size: Math.min(opts.limit ?? 50, 100),
     });
 
@@ -221,23 +222,22 @@ function truncate(s: string, max: number): string {
 
 /**
  * 並び順を Notion の sorts 配列に変換する。
- * 関連度/重要度はスコア降順 → 同点は公開日時の新しい順を第2キーにする。
+ * 主キー（latest/relevance/importance）に direction を適用し、
+ * 関連度/重要度の同点時は公開日時の新しい順を第2キーにする。
  */
-function buildSorts(sort: SortKey = "latest") {
-  const byDate = { property: PROP.publishedAt, direction: "descending" as const };
+function buildSorts(sort: SortKey = "latest", direction: SortDirection = "desc") {
+  const dir = direction === "asc" ? ("ascending" as const) : ("descending" as const);
+  const byDateDesc = {
+    property: PROP.publishedAt,
+    direction: "descending" as const,
+  };
   switch (sort) {
     case "relevance":
-      return [
-        { property: PROP.relevance, direction: "descending" as const },
-        byDate,
-      ];
+      return [{ property: PROP.relevance, direction: dir }, byDateDesc];
     case "importance":
-      return [
-        { property: PROP.importance, direction: "descending" as const },
-        byDate,
-      ];
+      return [{ property: PROP.importance, direction: dir }, byDateDesc];
     case "latest":
     default:
-      return [byDate];
+      return [{ property: PROP.publishedAt, direction: dir }];
   }
 }
