@@ -110,6 +110,7 @@ export class LlmSummarizer implements Summarizer {
               "与えられた記事のタイトルと抜粋【だけ】を根拠に、次のJSONを返してください。" +
               '{"titleJa": string, "summary": string, "relevance": 1-5の整数, "importance": 1-5の整数}。' +
               "titleJa は記事タイトルの自然な日本語訳（元が日本語ならそのまま、媒体名の付与は不要）。" +
+              "企業名・製品名・サービス名などの固有名詞は翻訳せず原表記（英字）のまま残すこと（例: IonQ, Anthropic, OpenAI はそのまま）。" +
               "summary は事実に忠実な日本語2文以内。本文抜粋が乏しい・無い場合は推測で内容を補わず、" +
               "タイトルを自然な日本語に言い換える程度にとどめ、与えられていない事実・数値を創作しないこと。" +
               "relevance はその記事が指定銘柄・関連テーマにどれだけ直接関係するか（5=核心、1=ほぼ無関係）。" +
@@ -167,5 +168,66 @@ export class LlmSummarizer implements Summarizer {
       importance: clampScore(parsed.importance),
       enriched: true,
     };
+  }
+}
+
+/** Groq が利用可能か（APIキーが設定されているか）。 */
+export function isGroqConfigured(): boolean {
+  return Boolean(process.env.GROQ_API_KEY);
+}
+
+/**
+ * Groq で自由形式テキストを生成する（AIピックアップの企業ダイジェスト用）。
+ * 使用量アキュムレータ(groqStats)も更新する。失敗・429・未設定は null を返す。
+ */
+export async function groqComplete(
+  system: string,
+  user: string,
+  maxTokens = 400,
+): Promise<string | null> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return null;
+  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: AbortSignal.timeout(30_000),
+      body: JSON.stringify({
+        model,
+        temperature: 0.3,
+        max_tokens: maxTokens,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      }),
+    });
+
+    groqStats.requests += 1;
+    const resetSec = parseResetSeconds(
+      res.headers.get("x-ratelimit-reset-requests"),
+    );
+    if (resetSec !== null) {
+      groqStats.resetAt = new Date(Date.now() + resetSec * 1000).toISOString();
+    }
+    if (res.status === 429) {
+      groqStats.limited = true;
+      return null;
+    }
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: { total_tokens?: number };
+    };
+    groqStats.tokens += data.usage?.total_tokens ?? 0;
+    return (data.choices?.[0]?.message?.content ?? "").trim() || null;
+  } catch {
+    return null;
   }
 }
