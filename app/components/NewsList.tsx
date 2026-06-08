@@ -11,6 +11,10 @@ const SORTS = [
 ] as const;
 
 type SortKey = (typeof SORTS)[number]["key"];
+type Direction = "asc" | "desc";
+
+const PAGE = 10; // 1度に表示する件数
+const FETCH_LIMIT = 60; // サーバーから取得する上限
 
 interface TabItem {
   key: string;
@@ -29,7 +33,9 @@ export function NewsList({ enrichedOnly = false }: { enrichedOnly?: boolean } = 
   const [tabs, setTabs] = useState<TabItem[]>([ALL_TAB]);
   const [tab, setTab] = useState<string>("ALL");
   const [sort, setSort] = useState<SortKey>("latest");
+  const [dir, setDir] = useState<Direction>("desc");
   const [items, setItems] = useState<NewsItem[]>([]);
+  const [visible, setVisible] = useState(PAGE);
   const [status, setStatus] = useState<"loading" | "ready" | "unconfigured" | "error">(
     "loading",
   );
@@ -58,14 +64,17 @@ export function NewsList({ enrichedOnly = false }: { enrichedOnly?: boolean } = 
   useEffect(() => {
     let cancelled = false;
     setStatus("loading");
+    setVisible(PAGE); // 条件変更で表示件数をリセット
 
     const params = new URLSearchParams();
     if (tab !== "ALL") params.set("ticker", tab);
     if (sort !== "latest") params.set("sort", sort);
+    if (dir !== "desc") params.set("dir", dir);
     if (enrichedOnly) params.set("enriched", "1");
+    params.set("limit", String(FETCH_LIMIT));
     const qs = params.toString();
 
-    fetch(`/api/news${qs ? `?${qs}` : ""}`)
+    fetch(`/api/news?${qs}`)
       .then((r) => r.json() as Promise<NewsResponse>)
       .then((data) => {
         if (cancelled) return;
@@ -79,7 +88,20 @@ export function NewsList({ enrichedOnly = false }: { enrichedOnly?: boolean } = 
     return () => {
       cancelled = true;
     };
-  }, [tab, sort, enrichedOnly]);
+  }, [tab, sort, dir, enrichedOnly]);
+
+  // ソートボタン押下: 同じソートなら方向反転、違うソートなら降順から
+  function onSort(key: SortKey) {
+    if (key === sort) {
+      setDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSort(key);
+      setDir("desc");
+    }
+  }
+
+  const shown = items.slice(0, visible);
+  const hasMore = items.length > visible;
 
   return (
     <div>
@@ -103,25 +125,30 @@ export function NewsList({ enrichedOnly = false }: { enrichedOnly?: boolean } = 
         ))}
       </div>
 
-      {/* 並び替え */}
+      {/* 並び替え（同じ項目を再クリックで昇順/降順を切替） */}
       <div className="mt-3 flex items-center gap-2">
         <span className="text-xs text-neutral-400">並び替え</span>
         <div className="flex gap-1">
-          {SORTS.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              aria-pressed={sort === s.key}
-              onClick={() => setSort(s.key)}
-              className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                sort === s.key
-                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-                  : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
+          {SORTS.map((s) => {
+            const active = sort === s.key;
+            return (
+              <button
+                key={s.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onSort(s.key)}
+                title={active ? (dir === "desc" ? "降順（再クリックで昇順）" : "昇順（再クリックで降順）") : undefined}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                  active
+                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                    : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                }`}
+              >
+                {s.label}
+                {active && <span className="ml-1">{dir === "desc" ? "▼" : "▲"}</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -151,11 +178,24 @@ export function NewsList({ enrichedOnly = false }: { enrichedOnly?: boolean } = 
         )}
 
         {status === "ready" && items.length > 0 && (
-          <div className="grid gap-3">
-            {items.map((item) => (
-              <NewsCard key={item.id} item={item} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-3">
+              {shown.map((item) => (
+                <NewsCard key={item.id} item={item} />
+              ))}
+            </div>
+            {hasMore && (
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => setVisible((v) => v + PAGE)}
+                  className="rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-600 transition hover:border-teal-400 hover:text-teal-600 dark:border-neutral-700 dark:text-neutral-300"
+                >
+                  さらに表示（残り{items.length - visible}件）
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
