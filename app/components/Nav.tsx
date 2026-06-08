@@ -16,7 +16,7 @@ export function Nav({ active }: { active: "home" | "digest" }) {
         href="/digest"
         className={`${base} ${active === "digest" ? on : off}`}
       >
-        ✨ AI要約
+        ✨ AIピックアップ
       </Link>
       <Link
         href="/admin"

@@ -65,3 +65,15 @@ export interface NewsItem {
   readonly enriched: boolean;
   readonly createdAt: string;
 }
+
+/** AIピックアップ（企業ごとの注目記事まとめ）。 */
+export interface Pick {
+  readonly ticker: Ticker;
+  readonly name: string;
+  /** AIが集約したダイジェスト本文（箇条書き等）。 */
+  readonly digest: string;
+  /** 集約対象に選ばれた記事 */
+  readonly articles: Array<{ title: string; url: string; importance: number }>;
+  /** 生成日時（ISO8601） */
+  readonly generatedAt: string;
+}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { collect } from "@/lib/pipeline";
+import { generatePicks } from "@/lib/picks/generate";
 
 // Node.js ランタイムで実行（crypto / 外部fetch / 長めの実行時間が必要）
 export const runtime = "nodejs";
@@ -27,7 +28,14 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const result = await collect();
-    return NextResponse.json({ ok: true, ...result });
+    // 収集後に各企業のAIピックアップを生成（Groq未設定/ロック中は内部でskip）
+    let picks = { generated: 0, skipped: null as string | null };
+    try {
+      picks = await generatePicks();
+    } catch {
+      // ピック生成の失敗は収集結果に影響させない
+    }
+    return NextResponse.json({ ok: true, ...result, picks });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : String(e) },
