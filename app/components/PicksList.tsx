@@ -77,7 +77,7 @@ export function PicksList() {
       {picks.map((p) => (
         <section
           key={p.ticker}
-          className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+          className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-neutral-900/70 dark:backdrop-blur-sm"
         >
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg font-bold">
