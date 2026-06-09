@@ -49,7 +49,7 @@ export function UsageGauges() {
   if (!data || !data.configured || data.gauges.length === 0) return null;
 
   return (
-    <section className="mt-8 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+    <section className="mt-8 rounded-xl border border-neutral-200 p-4 dark:border-white/10 dark:bg-neutral-900/60 dark:backdrop-blur-sm">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

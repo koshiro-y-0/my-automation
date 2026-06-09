@@ -1,9 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 }
 
+/* 宇宙アニメ背景(SpaceBackground)を見せるため body は透明。
+   テキストは明色固定（ダーク宇宙テーマ）。 */
 body {
-  @apply bg-neutral-50 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100;
+  @apply bg-transparent text-neutral-100 antialiased;
 }

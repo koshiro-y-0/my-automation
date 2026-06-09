@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./components/ServiceWorkerRegister";
+import { SpaceBackground } from "./components/SpaceBackground";
 
 export const metadata: Metadata = {
   title: "US Stock Watch",
@@ -28,8 +29,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" className="dark">
       <body>
+        <SpaceBackground />
         {children}
         <ServiceWorkerRegister />
       </body>

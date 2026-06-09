@@ -39,7 +39,7 @@ export function NewsCard({ item }: { item: NewsItem }) {
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-teal-400 hover:shadow-sm dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-teal-500"
+      className="block rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-teal-400 hover:shadow-sm dark:border-white/10 dark:bg-neutral-900/70 dark:backdrop-blur-sm dark:hover:border-teal-500/60"
     >
       <div className="flex items-center gap-2 text-xs text-neutral-500">
         <span className="rounded bg-neutral-100 px-1.5 py-0.5 font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
