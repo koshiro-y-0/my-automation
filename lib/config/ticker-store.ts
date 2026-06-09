@@ -97,6 +97,48 @@ export async function addTicker(input: NewTickerInput): Promise<void> {
       [PROP.active]: { checkbox: true },
     },
   });
+
+  // ニュースDBの Ticker セレクトに新銘柄の選択肢を追加する。
+  // これを行わないと収集時の保存で「select option not found」となり記事が保存されない。
+  await ensureNewsTickerOption(cfg.client, input.ticker);
+}
+
+/**
+ * ニュースDB（NOTION_DATABASE_ID）の Ticker セレクトに option を追加（既存ならスキップ）。
+ * 既存オプションは id で温存し、新規のみ追記する。失敗は致命的でないため握る。
+ */
+async function ensureNewsTickerOption(
+  client: Client,
+  ticker: string,
+): Promise<void> {
+  const newsDbId = process.env.NOTION_DATABASE_ID;
+  if (!newsDbId) return;
+  try {
+    const db = (await client.databases.retrieve({ database_id: newsDbId })) as {
+      data_sources?: Array<{ id: string }>;
+    };
+    const dsId = db.data_sources?.[0]?.id;
+    if (!dsId) return;
+    const ds = (await client.dataSources.retrieve({ data_source_id: dsId })) as {
+      properties?: Record<string, { select?: { options?: Array<{ id: string; name: string }> } }>;
+    };
+    const options = ds.properties?.Ticker?.select?.options ?? [];
+    if (options.some((o) => o.name === ticker)) return;
+    await client.dataSources.update({
+      data_source_id: dsId,
+      properties: {
+        Ticker: {
+          select: {
+            // 既存は id で温存し、新規を追記
+            options: [...options.map((o) => ({ id: o.id })), { name: ticker }],
+          },
+        },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  } catch {
+    // 選択肢追加に失敗しても企業登録自体は成功扱い（収集時に再試行余地あり）
+  }
 }
 
 // ── ヘルパ ───────────────────────────────────────────────
