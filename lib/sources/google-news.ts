@@ -15,7 +15,13 @@ export class GoogleNewsSource implements Source {
   });
 
   async fetch(ticker: TickerConfig): Promise<RawArticle[]> {
-    const query = ticker.keywords.slice(0, 3).join(" OR ");
+    // 各キーワードを引用符で囲んでフレーズ一致にする。
+    // 引用符なしだと汎用語がノイズ（古い無関係記事の大きな塊）を拾い、
+    // 新着が埋もれて取得が停滞する問題があったため（例: Anthropic）。
+    const query = ticker.keywords
+      .slice(0, 3)
+      .map((k) => `"${k}"`)
+      .join(" OR ");
     const url = `https://news.google.com/rss/search?q=${encodeURIComponent(
       query,
     )}&hl=ja&gl=JP&ceid=JP:ja`;
