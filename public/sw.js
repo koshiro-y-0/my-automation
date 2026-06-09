@@ -1,6 +1,8 @@
 // Service Worker — オフライン対応 + Web Push（設計書 M2 / M4）
 
-const CACHE = "usw-v1";
+// UIを更新したら版数を上げる。古いキャッシュ(旧画面)を強制的に破棄し、
+// ホーム画面追加済みのPWAにも新しい画面を確実に反映させる。
+const CACHE = "usw-v2";
 const APP_SHELL = ["/"];
 
 self.addEventListener("install", (event) => {
