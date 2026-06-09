@@ -38,12 +38,13 @@ export const TICKERS: readonly TickerConfig[] = [
     name: "Anthropic",
     listed: false,
     keywords: [
+      // 先頭3語が Google News クエリに使われる。企業特化の語を前に置く
+      // （汎用語「AI規制」等を先頭に置くと古い無関係記事に埋もれて新着が出ない）。
       "Anthropic",
-      "AI規制",
-      "AI regulation",
+      "Claude AI",
+      "アンソロピック",
       "OpenAI",
       "資金調達",
-      "funding",
       "IPO",
     ],
   },
