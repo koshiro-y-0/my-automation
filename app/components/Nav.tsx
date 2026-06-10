@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-/** ホーム / AI要約ダイジェスト 間のナビ。 */
-export function Nav({ active }: { active: "home" | "digest" }) {
+/** ホーム / AIピックアップ / AIチャット 間のナビ。 */
+export function Nav({ active }: { active: "home" | "digest" | "chat" }) {
   const base =
     "rounded-full px-3 py-1 text-sm font-medium transition";
   const on = "bg-teal-500 text-white";
@@ -17,6 +17,9 @@ export function Nav({ active }: { active: "home" | "digest" }) {
         className={`${base} ${active === "digest" ? on : off}`}
       >
         ✨ AIピックアップ
+      </Link>
+      <Link href="/chat" className={`${base} ${active === "chat" ? on : off}`}>
+        💬 チャット
       </Link>
       <Link
         href="/admin"

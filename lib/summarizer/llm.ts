@@ -177,17 +177,20 @@ export function isGroqConfigured(): boolean {
 }
 
 /**
- * Groq で自由形式テキストを生成する（AIピックアップの企業ダイジェスト用）。
+ * Groq で自由形式テキストを生成する（AIピックアップ／チャット回答用）。
  * 使用量アキュムレータ(groqStats)も更新する。失敗・429・未設定は null を返す。
+ * opts.model で呼び出しごとにモデルを上書き可能（チャットは軽量モデルを使う）。
  */
 export async function groqComplete(
   system: string,
   user: string,
   maxTokens = 400,
+  opts?: { model?: string },
 ): Promise<string | null> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return null;
-  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+  const model =
+    opts?.model || process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
   try {
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
