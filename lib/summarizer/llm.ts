@@ -30,6 +30,17 @@ export function getGroqStats(): GroqRunStats {
   return groqStats;
 }
 
+/**
+ * 429応答の Retry-After（秒）を resetAt に反映する。
+ * x-ratelimit-reset-requests より正確な「実際に再試行できる時刻」を表すため優先。
+ */
+function captureRetryAfter(res: Response): void {
+  const retryAfter = Number(res.headers.get("retry-after"));
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    groqStats.resetAt = new Date(Date.now() + retryAfter * 1000).toISOString();
+  }
+}
+
 /** "2m59.56s" / "45s" / "120" などの Groq reset 表記を秒に変換。 */
 function parseResetSeconds(v: string | null): number | null {
   if (!v) return null;
@@ -135,6 +146,7 @@ export class LlmSummarizer implements Summarizer {
 
     if (res.status === 429) {
       groqStats.limited = true;
+      captureRetryAfter(res);
       throw new Error("Groq rate limited (429)");
     }
     if (!res.ok) {
@@ -220,6 +232,7 @@ export async function groqComplete(
     }
     if (res.status === 429) {
       groqStats.limited = true;
+      captureRetryAfter(res);
       return null;
     }
     if (!res.ok) return null;

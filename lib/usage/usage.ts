@@ -174,14 +174,17 @@ export async function addUsage(delta: UsageDelta): Promise<void> {
   }
 }
 
-/** Groqが当日上限に達してロック中か（リクエスト数 or 明示フラグ）。 */
+/**
+ * Groqがロック中か。
+ * - 429検知時のロックは resetAt まで【限定】。Groqの429は多くが「分次」レート制限で
+ *   数分で回復するため、日内ずっとロックし続けない（resetAt無し/経過後は解除）。
+ *   ※以前は limited=true だけで当日ロック扱いになり、収集直後のピック生成が
+ *     毎日スキップされる不具合の原因だった。
+ * - 日次の上限はリクエスト数で判定する。
+ */
 export function isGroqLocked(snap: UsageSnapshot): boolean {
-  if (snap.groqLimited) {
-    // reset時刻を過ぎていればロック解除
-    if (snap.groqResetAt) {
-      return new Date(snap.groqResetAt).getTime() > Date.now();
-    }
-    return true;
+  if (snap.groqLimited && snap.groqResetAt) {
+    if (new Date(snap.groqResetAt).getTime() > Date.now()) return true;
   }
   return snap.groqRequests >= LIMITS.groqRequests;
 }
