@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
-import { collect } from "@/lib/pipeline";
+import { generatePicks } from "@/lib/picks/generate";
 
-// Node.js ランタイムで実行（crypto / 外部fetch / 長めの実行時間が必要）
+// Node.js ランタイム（外部fetch・やや長い実行時間）
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * 収集パイプラインのトリガ（Vercel Cron が毎朝呼ぶ）。
- * 認可: Vercel Cron は実行時に Authorization: Bearer <CRON_SECRET> を付与する。
- * 手動実行も同ヘッダで可能。
+ * AIピックアップ生成のトリガ（Vercel Cron）。
+ * 収集(/api/cron/collect)とは別Cronで、収集の少し後に実行する。
+ * 理由: 収集は新着60件をGroqで一括処理して分次レート上限(429)に当たりやすく、
+ * 同一実行内でピックを生成するとロックされてスキップされ続けるため
+ * （ピックが更新されない不具合の原因）。時間を空けてレート回復後に生成する。
  */
 export async function GET(request: Request): Promise<Response> {
   const secret = process.env.CRON_SECRET;
@@ -19,17 +21,14 @@ export async function GET(request: Request): Promise<Response> {
       { status: 500 },
     );
   }
-
   const auth = request.headers.get("authorization");
   if (auth !== `Bearer ${secret}`) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const result = await collect();
-    // ※ AIピックアップは別Cron（/api/cron/picks）で収集の少し後に生成する。
-    //   同一実行だと収集のGroqレート消費でロックされ、ピックが更新されないため。
-    return NextResponse.json({ ok: true, ...result });
+    const picks = await generatePicks();
+    return NextResponse.json({ ok: true, picks });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : String(e) },
