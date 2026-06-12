@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* dark: ユーティリティを OSの prefers-color-scheme ではなく <html class="dark"> に連動させる。
+   これがないと、Windows等のライトOSで dark: が効かず「白背景＋白文字」になり読めない。 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   color-scheme: dark;
 }
