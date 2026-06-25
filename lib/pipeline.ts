@@ -65,17 +65,38 @@ export async function collect(): Promise<CollectResult> {
   }
 
   // 3. 新着を特定（保存・要約の前に行う）。
-  //    既存記事はここで除外することで、後段の要約（外部LLM呼び出し）を
-  //    新着分だけに限定する。1回の実行件数は上限で制限し、Vercelの実行時間
-  //    （無料プラン60秒）とLLM無料枠のレート制限の両方を超えないようにする。
+  //    既存記事を除外し、1回の実行件数を上限で制限（Vercel 60秒 / LLM無料枠対策）。
   //    冪等性（URLハッシュ）により、上限超過分は次回以降に取りこぼしなく保存される。
+  //
+  //    ★ 公平配分: 単純に先頭からslice すると、銘柄数が増えたとき処理順で後ろの
+  //    銘柄（例: 5社目以降）が毎回打ち切られて永久に更新されない不具合があった。
+  //    銘柄ごとにラウンドロビンで取り、全銘柄に保存枠を均等配分する。
   const allIds = [...byId.keys()];
   const existing = await storage.existingIds(allIds);
   const maxPerRun = Math.max(1, Number(process.env.MAX_SAVES_PER_RUN) || 60);
-  const freshArticles = allIds
-    .filter((id) => !existing.has(id))
-    .slice(0, maxPerRun)
-    .map((id) => [id, byId.get(id)!] as const);
+
+  const freshByTicker = new Map<string, Array<readonly [string, RawArticle]>>();
+  for (const id of allIds) {
+    if (existing.has(id)) continue;
+    const article = byId.get(id)!;
+    const list = freshByTicker.get(article.ticker) ?? [];
+    list.push([id, article] as const);
+    freshByTicker.set(article.ticker, list);
+  }
+
+  const freshArticles: Array<readonly [string, RawArticle]> = [];
+  const queues = [...freshByTicker.values()];
+  let progressed = true;
+  while (freshArticles.length < maxPerRun && progressed) {
+    progressed = false;
+    for (const q of queues) {
+      const next = q.shift();
+      if (!next) continue;
+      freshArticles.push(next);
+      progressed = true;
+      if (freshArticles.length >= maxPerRun) break;
+    }
+  }
 
   // 4. 新着のみエンリッチ（要約＋関連度・重要度）→ NewsItem 化
   //    LLM呼び出しは新着件数だけに抑制。失敗時は enrich 内部でフォールバック済み。

@@ -1,4 +1,5 @@
 import { Client } from "@notionhq/client";
+import { env } from "@/lib/env";
 import type { NewsItem, SourceName, Ticker } from "@/lib/types";
 import type {
   ListOptions,
@@ -38,7 +39,7 @@ export class NotionStorage implements StorageProvider {
   private readonly databaseId: string;
   private dataSourceId: string | null = null;
 
-  constructor(token = process.env.NOTION_TOKEN, databaseId = process.env.NOTION_DATABASE_ID) {
+  constructor(token = env("NOTION_TOKEN"), databaseId = env("NOTION_DATABASE_ID")) {
     if (!token) throw new Error("NOTION_TOKEN is not set");
     if (!databaseId) throw new Error("NOTION_DATABASE_ID is not set");
     this.client = new Client({ auth: token });
