@@ -63,10 +63,11 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // 銘柄の実在確認（設定DB/静的リスト）
+  // ticker="ALL" は全企業横断。それ以外は実在確認（設定DB/静的リスト）。
+  const isAll = ticker === "ALL";
   const tickers = await getTickers();
-  const config = tickers.find((t) => t.ticker === ticker);
-  if (!config) {
+  const config = isAll ? null : tickers.find((t) => t.ticker === ticker);
+  if (!isAll && !config) {
     return NextResponse.json(
       { ok: false, error: `未登録の銘柄です: ${ticker}` },
       { status: 400 },
@@ -75,7 +76,9 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     resetGroqStats();
-    const result = await answerQuestion(config.ticker, config.name, question);
+    const result = isAll
+      ? await answerQuestion("ALL", "全企業", question)
+      : await answerQuestion(config!.ticker, config!.name, question);
 
     // チャット消費を既存ゲージに計上
     const g = getGroqStats();

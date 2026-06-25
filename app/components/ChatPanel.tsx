@@ -44,9 +44,13 @@ export function ChatPanel() {
     fetch("/api/tickers")
       .then((r) => r.json() as Promise<{ tickers: TickerOption[] }>)
       .then((d) => {
-        const list = d.tickers ?? [];
+        // 先頭に「すべて（全企業横断）」を追加
+        const list: TickerOption[] = [
+          { ticker: "ALL", name: "すべて（全企業）" },
+          ...(d.tickers ?? []),
+        ];
         setTickers(list);
-        if (list.length > 0) setTicker(list[0].ticker);
+        setTicker("ALL");
       })
       .catch(() => {});
     const saved = localStorage.getItem("adminPassword");
@@ -151,9 +155,9 @@ export function ChatPanel() {
       <div className="flex min-h-[40vh] flex-col gap-3 rounded-xl border border-neutral-200 p-4 dark:border-white/10 dark:bg-neutral-900/50 dark:backdrop-blur-sm">
         {messages.length === 0 && (
           <p className="m-auto py-10 text-center text-sm text-neutral-500">
-            例：「最近どう？」「決算の数字は？」「IBMとの提携の話あった？」
+            例：「今日いちばん重要なニュースは？」「量子コンピュータ関連で何かあった？」
             <br />
-            収集済みニュースだけを根拠に回答し、参照記事を添えます。
+            「IONQの決算の数字は？」など特定企業も。収集済みニュースだけを根拠に回答し、参照記事を添えます。
           </p>
         )}
         {messages.map((m, i) =>
@@ -182,7 +186,7 @@ export function ChatPanel() {
                           rel="noopener noreferrer"
                           className="text-neutral-400 underline-offset-2 hover:text-teal-400 hover:underline"
                         >
-                          [{j + 1}] ★{s.importance} {s.title}
+                          [{j + 1}] <span className="text-neutral-500">{s.ticker}</span> ★{s.importance} {s.title}
                         </a>
                       </li>
                     ))}
@@ -207,7 +211,11 @@ export function ChatPanel() {
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder={`${tickers.find((t) => t.ticker === ticker)?.name ?? ""} について質問…`}
+          placeholder={
+            ticker === "ALL"
+              ? "全企業から質問…"
+              : `${tickers.find((t) => t.ticker === ticker)?.name ?? ""} について質問…`
+          }
           maxLength={300}
           className={`${field} min-w-0 flex-1`}
         />
