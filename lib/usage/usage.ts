@@ -1,4 +1,5 @@
 import { Client } from "@notionhq/client";
+import { env } from "@/lib/env";
 
 /**
  * API消費量の記録・取得（機能5）。
@@ -46,7 +47,7 @@ const PROP = {
 } as const;
 
 export function isUsageConfigured(): boolean {
-  return Boolean(process.env.NOTION_TOKEN && process.env.NOTION_USAGE_DATABASE_ID);
+  return Boolean(env("NOTION_TOKEN") && env("NOTION_USAGE_DATABASE_ID"));
 }
 
 export function todayUtc(): string {
@@ -54,8 +55,8 @@ export function todayUtc(): string {
 }
 
 function client(): { client: Client; dbId: string } | null {
-  const token = process.env.NOTION_TOKEN;
-  const dbId = process.env.NOTION_USAGE_DATABASE_ID;
+  const token = env("NOTION_TOKEN");
+  const dbId = env("NOTION_USAGE_DATABASE_ID");
   if (!token || !dbId) return null;
   return { client: new Client({ auth: token }), dbId };
 }

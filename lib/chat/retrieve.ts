@@ -59,13 +59,19 @@ export interface RetrievalResult {
 /**
  * 質問に関連する記事を選ぶ。
  * キーワード一致数（多いほど上位）→ 重要度 → 新しさ の順で評価する。
+ * ticker を省略すると全企業横断で検索する（汎用チャット用）。
  */
 export async function retrieveArticles(
-  ticker: Ticker,
+  ticker: Ticker | undefined,
   question: string,
 ): Promise<RetrievalResult> {
   const storage = getStorage();
-  const candidates = await storage.list({ ticker, limit: 100, sort: "latest" });
+  // 全企業横断時は候補を広めに取る（複数社をカバーするため）
+  const candidates = await storage.list({
+    ticker,
+    limit: ticker ? 100 : 150,
+    sort: "latest",
+  });
   const keywords = extractKeywords(question);
 
   // ② キーワードスコアリング

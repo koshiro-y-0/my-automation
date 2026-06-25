@@ -1,4 +1,5 @@
 import { Client } from "@notionhq/client";
+import { env } from "@/lib/env";
 import type { Pick } from "@/lib/types";
 
 /**
@@ -16,12 +17,12 @@ const PROP = {
 } as const;
 
 export function isPicksConfigured(): boolean {
-  return Boolean(process.env.NOTION_TOKEN && process.env.NOTION_PICKS_DATABASE_ID);
+  return Boolean(env("NOTION_TOKEN") && env("NOTION_PICKS_DATABASE_ID"));
 }
 
 function cfg(): { client: Client; dbId: string } | null {
-  const token = process.env.NOTION_TOKEN;
-  const dbId = process.env.NOTION_PICKS_DATABASE_ID;
+  const token = env("NOTION_TOKEN");
+  const dbId = env("NOTION_PICKS_DATABASE_ID");
   if (!token || !dbId) return null;
   return { client: new Client({ auth: token }), dbId };
 }

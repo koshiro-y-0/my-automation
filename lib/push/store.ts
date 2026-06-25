@@ -1,5 +1,6 @@
 import { Client } from "@notionhq/client";
 import { createHash } from "node:crypto";
+import { env } from "@/lib/env";
 import type { PushRecord } from "./types";
 
 /**
@@ -114,8 +115,8 @@ class NotionSubscriptionStore implements SubscriptionStore {
  * 既定の購読ストアを返す。未設定なら null（=プッシュ無効）。
  */
 export function getSubscriptionStore(): SubscriptionStore | null {
-  const token = process.env.NOTION_TOKEN;
-  const dbId = process.env.NOTION_PUSH_DATABASE_ID;
+  const token = env("NOTION_TOKEN");
+  const dbId = env("NOTION_PUSH_DATABASE_ID");
   if (!token || !dbId) return null;
   return new NotionSubscriptionStore(new Client({ auth: token }), dbId);
 }

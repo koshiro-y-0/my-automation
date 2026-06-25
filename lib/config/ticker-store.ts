@@ -1,4 +1,5 @@
 import { Client } from "@notionhq/client";
+import { env } from "@/lib/env";
 import type { TickerConfig } from "@/lib/types";
 import { TICKERS as STATIC_TICKERS } from "./tickers";
 
@@ -32,8 +33,8 @@ export interface NewTickerInput {
 }
 
 function configuredClient(): { client: Client; dbId: string } | null {
-  const token = process.env.NOTION_TOKEN;
-  const dbId = process.env.NOTION_TICKERS_DATABASE_ID;
+  const token = env("NOTION_TOKEN");
+  const dbId = env("NOTION_TICKERS_DATABASE_ID");
   if (!token || !dbId) return null;
   return { client: new Client({ auth: token }), dbId };
 }
@@ -111,7 +112,7 @@ async function ensureNewsTickerOption(
   client: Client,
   ticker: string,
 ): Promise<void> {
-  const newsDbId = process.env.NOTION_DATABASE_ID;
+  const newsDbId = env("NOTION_DATABASE_ID");
   if (!newsDbId) return;
   try {
     const db = (await client.databases.retrieve({ database_id: newsDbId })) as {
