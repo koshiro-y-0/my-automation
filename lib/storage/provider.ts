@@ -36,4 +36,15 @@ export interface StorageProvider {
   saveMany(items: NewsItem[]): Promise<SaveResult>;
   /** 保存済みニュースを新しい順で取得する（PWA表示用） */
   list(opts?: ListOptions): Promise<NewsItem[]>;
+  /**
+   * 指定銘柄の記事を最大 limit 件アーカイブ（削除）する。
+   * 件数が多い場合に備え、まだ残りがあるかを hasMore で返す（呼び出し側でループ）。
+   */
+  archiveByTicker(ticker: Ticker, limit: number): Promise<ArchiveResult>;
+}
+
+/** アーカイブ結果 */
+export interface ArchiveResult {
+  archived: number;
+  hasMore: boolean;
 }

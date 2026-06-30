@@ -2,6 +2,7 @@ import { Client } from "@notionhq/client";
 import { env } from "@/lib/env";
 import type { NewsItem, SourceName, Ticker } from "@/lib/types";
 import type {
+  ArchiveResult,
   ListOptions,
   SaveResult,
   SortDirection,
@@ -158,6 +159,25 @@ export class NotionStorage implements StorageProvider {
     });
 
     return res.results.map(pageToNewsItem).filter((x): x is NewsItem => x !== null);
+  }
+
+  async archiveByTicker(ticker: Ticker, limit: number): Promise<ArchiveResult> {
+    const dataSourceId = await this.resolveDataSourceId();
+    const pageSize = Math.min(Math.max(limit, 1), 100);
+    // アーカイブ済みはクエリ対象外になるため、毎回先頭から取得すればよい。
+    const res = await this.client.dataSources.query({
+      data_source_id: dataSourceId,
+      filter: { property: PROP.ticker, select: { equals: ticker } },
+      page_size: pageSize,
+    });
+
+    let archived = 0;
+    for (const page of res.results) {
+      await this.client.pages.update({ page_id: page.id, archived: true });
+      archived++;
+    }
+    // バッチが満杯なら、まだ残っている可能性がある（呼び出し側が再実行）。
+    return { archived, hasMore: archived >= pageSize };
   }
 }
 

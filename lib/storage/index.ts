@@ -7,6 +7,7 @@ export type {
   SaveResult,
   SortKey,
   SortDirection,
+  ArchiveResult,
 } from "./provider";
 
 /**
