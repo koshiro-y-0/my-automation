@@ -105,6 +105,29 @@ export async function addTicker(input: NewTickerInput): Promise<void> {
 }
 
 /**
+ * 監視銘柄を削除（無効化）する。設定DBの該当行を Active=false にする。
+ * getTickers は Active=false を除外するため、収集・タブ・ピック対象から外れる。
+ * @returns 対象が存在して無効化したら true
+ */
+export async function deactivateTicker(ticker: string): Promise<boolean> {
+  const cfg = configuredClient();
+  if (!cfg) throw new Error("NOTION_TICKERS_DATABASE_ID is not configured");
+  const dataSourceId = await resolveDataSourceId(cfg.client, cfg.dbId);
+  const res = await cfg.client.dataSources.query({
+    data_source_id: dataSourceId,
+    filter: { property: PROP.ticker, title: { equals: ticker } },
+    page_size: 1,
+  });
+  const page = res.results[0] as { id: string } | undefined;
+  if (!page) return false;
+  await cfg.client.pages.update({
+    page_id: page.id,
+    properties: { [PROP.active]: { checkbox: false } },
+  });
+  return true;
+}
+
+/**
  * ニュースDB（NOTION_DATABASE_ID）の Ticker セレクトに option を追加（既存ならスキップ）。
  * 既存オプションは id で温存し、新規のみ追記する。失敗は致命的でないため握る。
  */

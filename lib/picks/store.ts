@@ -94,6 +94,20 @@ export async function savePick(pick: Pick): Promise<void> {
   }
 }
 
+/** 指定銘柄のピック行を削除（アーカイブ）する。無ければ何もしない。 */
+export async function deletePick(ticker: string): Promise<void> {
+  const c = cfg();
+  if (!c) return;
+  const dsId = await dataSourceId(c.client, c.dbId);
+  const res = await c.client.dataSources.query({
+    data_source_id: dsId,
+    filter: { property: PROP.ticker, title: { equals: ticker } },
+    page_size: 1,
+  });
+  const page = res.results[0] as { id: string } | undefined;
+  if (page) await c.client.pages.update({ page_id: page.id, archived: true });
+}
+
 // ── ヘルパ ───────────────────────────────────────────────
 
 /**
